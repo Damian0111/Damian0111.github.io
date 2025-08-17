@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#121212">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./icon-192.png">
+    <title>FortiSafe</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            --bg-color: #121212; --surface-color: #1e1e1e; --primary-color: #03dac6;
+            --primary-variant-color: #3700b3; --on-bg-color: #e0e0e0; --on-surface-color: #ffffff;
+            --error-color: #cf6679; --border-radius: 12px;
+            --category-favorite: #ffc107;
+            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --transition-speed: 0.3s;
+        }
+
+        body.light-theme {
+            --bg-color: #ffffff;
+            --surface-color: #f8f9fa;
+            --primary-color: #1a73e8;
+            --primary-variant-color: #005cb2;
+            --on-bg-color: #3c4043;
+            --on-surface-color: #202124;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; background-color: var(--bg-color); color: var(--on-bg-color); font-family: var(--font-family); line-height: 1.6; transition: background-color var(--transition-speed), color var(--transition-speed); }
+        .app-container { max-width: 1200px; margin: 0 auto; padding: 15px; height: 100%; display: flex; flex-direction: column; }
+        .view { display: none; flex-direction: column; align-items: center; justify-content: flex-start; height: 100%; width: 100%; animation: fadeIn 0.5s ease-in-out; overflow-y: auto; padding-top: 20px;}
+        .view.active { display: flex; }
+        .view#setup-view, .view#login-view { justify-content: center; padding-top: 0; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        h1, h2 { text-align: center; margin-bottom: 24px; color: var(--on-surface-color); transition: color var(--transition-speed); }
+        p { text-align: center; max-width: 400px; margin-bottom: 20px; opacity: 0.8; }
+
+        .login-box {
+            width: 100%; max-width: 420px; padding: 40px 25px; background-color: var(--surface-color);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; display: flex; flex-direction: column;
+            align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transition: background-color var(--transition-speed), border-color var(--transition-speed);
+        }
+        body.light-theme .login-box { border-color: #e0e0e0; }
+        .logo-container { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 24px; }
+        .logo-svg { width: 64px; height: 64px; fill: var(--primary-color); transition: fill var(--transition-speed); }
+
+        .logo-container h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 0;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .vault-header .logo-container {
+            margin-bottom: 0;
+        }
+        .vault-header .logo-container h1 {
+            font-size: 1.8rem;
+        }
+
+        .form-group { margin-bottom: 20px; width: 100%; }
+        input[type="password"], input[type="search"], input[type="text"], select, textarea {
+            width: 100%; padding: 12px 15px; background-color: var(--bg-color); border: 1px solid #333;
+            border-radius: var(--border-radius); color: var(--on-surface-color); font-size: 1em; appearance: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color var(--transition-speed), color var(--transition-speed);
+        }
+        body.light-theme input, body.light-theme select, body.light-theme textarea { border-color: #dadce0; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-color); background-color: var(--surface-color); }
+        input.input-error { border-color: var(--error-color) !important; box-shadow: 0 0 5px var(--error-color); }
+        select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23e0e0e0' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat; background-position: right 1rem center; background-size: 1em;
+            padding-right: 2.5rem !important;
+        }
+        body.light-theme select { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%233c4043' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e"); }
+
+        .btn { display: inline-block; width: 100%; padding: 14px; background-color: var(--primary-color); color: var(--on-surface-color); border: none; border-radius: var(--border-radius); font-size: 1.1em; font-weight: bold; cursor: pointer; text-align: center; transition: background-color 0.3s, transform 0.2s, color var(--transition-speed); }
+        body:not(.light-theme) .btn { color: #000; }
+        .btn:hover { background-color: var(--primary-variant-color); color: var(--on-surface-color); } .btn:active { transform: scale(0.98); }
+        .btn-danger { background-color: var(--error-color); color: var(--on-surface-color); border: none; }
+
+        .btn-secondary {
+            background-color: #4a4a4a;
+            color: var(--on-surface-color);
+            border: none;
+        }
+        body.light-theme .btn-secondary {
+            background-color: #f1f3f4;
+            color: var(--on-bg-color);
+        }
+        body:not(.light-theme) .btn-secondary {
+            color: var(--on-surface-color);
+        }
+
+        #custom-alert-buttons .btn:hover { background-color: var(--primary-color); }
+        #custom-alert-buttons .btn-secondary:hover { background-color: #4a4a4a; }
+        body.light-theme #custom-alert-buttons .btn-secondary:hover { background-color: #f1f3f4; }
+        #custom-alert-buttons .btn-danger:hover { background-color: var(--error-color); }
+
+        .text-link { background: none; border: none; color: var(--primary-color); cursor: pointer; text-decoration: underline; font-size: 0.9em; margin-top: 15px; }
+        .error-message { color: var(--error-color); text-align: center; margin-top: 10px; height: 20px; font-size: 0.9em; }
+
+        #vault-view { justify-content: flex-start; }
+        .vault-header { width: 100%; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .header-actions { display: flex; gap: 10px; }
+        .icon-btn { cursor: pointer; background: none; border: none; padding: 5px; }
+        .icon-btn svg { width: 28px; height: 28px; stroke: var(--on-bg-color); transition: stroke 0.2s; }
+        .icon-btn:hover svg { stroke: var(--primary-color); }
+        .controls-bar { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; width: 100%; }
+        .search-sort-wrapper { display: flex; gap: 15px; flex-wrap: wrap; }
+        .search-wrapper, .sort-wrapper { flex: 1 1 auto; min-width: 180px; }
+        .filter-buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .filter-btn { padding: 10px; background-color: var(--surface-color); border: 1px solid #444; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; transition: all 0.3s; }
+        body.light-theme .filter-btn { border-color: #dadce0; }
+        .filter-btn svg { width: 24px; height: 24px; stroke: var(--on-bg-color); }
+        .filter-btn.active { background-color: var(--primary-color); border-color: var(--primary-color); }
+        .filter-btn.active svg { stroke: var(--on-surface-color); }
+        body:not(.light-theme) .filter-btn.active svg { stroke: #000; }
+        .filter-btn[data-filter="favorite"].active { background-color: var(--category-favorite); border-color: var(--category-favorite); }
+
+        #files-grid {
+            width: 100%;
+            flex-grow: 1;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 20px;
+            padding: 10px 0;
+            align-content: flex-start;
+        }
+        .file-item-wrapper { display: flex; flex-direction: column; }
+        .file-card { position: relative; background-color: var(--surface-color); border-radius: var(--border-radius); width: 100%; aspect-ratio: 1 / 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; overflow: hidden; transition: transform 0.2s ease, box-shadow 0.2s ease, background-color var(--transition-speed); }
+        .file-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
+        .file-card .thumbnail { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+
+        .file-icon svg {
+            width: 75%;
+            height: 75%;
+            max-width: 90px;
+            stroke: var(--on-surface-color);
+            stroke-width: 2.5;
+            opacity: 1;
+        }
+
+        .file-name-p { font-size: 0.85em; color: var(--on-bg-color); text-align: center; margin-top: 8px; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-actions { position: absolute; top: 5px; right: 5px; z-index: 2; display: flex; flex-direction: column; gap: 5px; }
+        .card-action-btn { background: rgba(0,0,0,0.5); border: none; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; transition: opacity 0.2s; }
+        .file-card:hover .card-action-btn { opacity: 1; }
+        .card-action-btn svg { width: 16px; height: 16px; stroke: #fff; }
+        .favorite-btn.is-favorite svg { fill: var(--category-favorite); stroke: var(--category-favorite); }
+        @media (max-width: 768px) { .card-action-btn { opacity: 1; } }
+
+        #calendar-wrapper { width: 100%; max-width: 480px; margin: 0 auto; background-color: var(--surface-color); border-radius: var(--border-radius); padding: 20px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); }
+        #calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        #calendar-header .btn { width: auto; padding: 8px 15px; font-size: 0.9em; }
+        #calendar-header .nav-buttons button { background: none; border: 1px solid #444; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; color: var(--on-surface-color); }
+        body.light-theme #calendar-header .nav-buttons button { border-color: #dadce0; }
+        #month-display { font-size: 1.3em; font-weight: 600; text-align: center; }
+        #weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: 500; padding-bottom: 10px; opacity: 0.7; font-size: 0.8em; }
+        #calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        .calendar-day { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; position: relative; border-radius: 50%; cursor: pointer; transition: background-color 0.2s, color 0.2s, border-color 0.2s; font-size: 0.9em; border: 2px solid transparent; }
+        .calendar-day:not(.padding-day):hover { background-color: rgba(255,255,255,0.1); }
+        .calendar-day.selected { background-color: var(--primary-color); color: var(--on-surface-color); font-weight: bold; border-color: var(--primary-color); }
+        body:not(.light-theme) .calendar-day.selected { color: #000; }
+        .calendar-day.today { border-color: var(--primary-variant-color); }
+        .calendar-day.has-event::after { content: ''; position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; background-color: var(--category-favorite); border-radius: 50%; }
+        .padding-day { opacity: 0.3; cursor: default; }
+        #day-details { padding-top: 15px; border-top: 1px solid #444; }
+        body.light-theme #day-details { border-color: #e0e0e0; }
+        #day-details h3 { text-align: left; font-size: 1.1em; margin-bottom: 10px; }
+        #event-note-editor textarea { min-height: 100px; }
+
+        .actions-container { position: fixed; bottom: 30px; right: 30px; display: flex; align-items: center; gap: 15px; z-index: 100; }
+        .fab { position: relative; width: 60px; height: 60px; background-color: #4CAF50; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 36px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.2s; }
+        .fab:active { transform: scale(0.95); } #upload-input { display: none; }
+        #calendar-fab-btn { width: 50px; height: 50px; background-color: #FF9800; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: transform 0.2s; }
+        #calendar-fab-btn svg { stroke: var(--on-surface-color); width: 26px; height: 26px; }
+        body:not(.light-theme) #calendar-fab-btn svg { stroke: #000; }
+        #calendar-fab-btn:active { transform: scale(0.95); }
+
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.3s; }
+        .modal.active { display: flex; }
+        .modal-content { background-color: var(--surface-color); padding: 30px; border-radius: var(--border-radius); width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; position: relative; animation: scaleIn 0.3s; }
+        .modal-close { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--on-bg-color); font-size: 24px; cursor: pointer; }
+
+        .loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; flex-direction: column; color: var(--on-surface-color); }
+        .loader.active { display: flex; }
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.2); border-left-color: var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        #loader-text { margin-top: 20px; } @keyframes spin { to { transform: rotate(360deg); } }
+
+        #custom-alert-modal .modal-content, #info-modal .modal-content { max-width: 450px; text-align: left; }
+        #custom-alert-modal .modal-content { text-align: center; }
+        #info-modal h3 { font-size: 1.2em; margin-top: 20px; margin-bottom: 10px; color: var(--primary-color); }
+        #info-modal ul { padding-left: 25px; } #info-modal li { margin-bottom: 10px; }
+        #custom-alert-title { margin-bottom: 15px; } #custom-alert-message { margin-bottom: 25px; opacity: 0.9; } #custom-alert-input-wrapper { display: none; margin-bottom: 20px; } #custom-alert-buttons { display: flex; flex-direction: row-reverse; justify-content: center; gap: 15px; } #custom-alert-buttons button { width: 120px; }
+
+        @media (max-width: 600px) {
+            .app-container { padding: 10px; }
+            #files-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; }
+            .actions-container { bottom: 20px; right: 20px; gap: 10px; }
+            .fab { width: 56px; height: 56px; font-size: 32px; }
+            #calendar-fab-btn { width: 48px; height: 48px; }
+            #calendar-fab-btn svg { width: 24px; height: 24px; }
+            #calendar-wrapper { padding: 15px; }
+            #month-display { font-size: 1.2em; }
+            #weekdays { font-size: 0.8em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- VIEWS -->
+        <div id="setup-view" class="view">
+            <div class="login-box">
+                <div class="logo-container"><svg class="logo-svg" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5L12 1zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"></path></svg><h1>Utwórz Sejf</h1></div>
+                <p>Ustaw silne hasło główne, aby zabezpieczyć swoje pliki. Hasło jest nie do odzyskania!</p>
+                <form id="setup-form" style="width:100%;" novalidate><div class="form-group"><label for="setup-password">Hasło (min. 8 znaków)</label><input type="password" id="setup-password"></div><div class="form-group"><label for="setup-password-confirm">Potwierdź hasło</label><input type="password" id="setup-password-confirm"></div><div id="setup-error" class="error-message"></div><button type="submit" class="btn">Utwórz sejf</button></form>
+                <div style="text-align: center; margin-top: 20px;"><button id="setup-info-link" class="text-link">Jak to działa?</button></div>
+            </div>
+        </div>
+        <div id="login-view" class="view">
+            <div class="login-box">
+                <div class="logo-container"><svg class="logo-svg" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5L12 1zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"></path></svg><h1>FortiSafe</h1></div>
+                <p>Podaj hasło główne, aby odblokować sejf.</p>
+                <form id="login-form" style="width:100%;" novalidate><div class="form-group"><label for="login-password">Hasło główne</label><input type="password" id="login-password"></div><div id="login-error" class="error-message"></div><button type="submit" class="btn">Odblokuj</button></form>
+                <div style="text-align: center; margin-top: 20px;"><button id="forgot-password-link" class="text-link">Nie pamiętam hasła...</button><button id="info-link" class="text-link" style="margin-left: 15px;">Jak to działa?</button></div>
+            </div>
+        </div>
+        <div id="vault-view" class="view">
+            <div class="vault-header">
+                <div class="logo-container"><svg class="logo-svg" style="width:40px;height:40px;" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5L12 1zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"></path></svg><h1>FortiSafe</h1></div>
+                <div class="header-actions">
+                    <button id="theme-toggle-btn" class="icon-btn" title="Zmień motyw"></button>
+                    <button id="backup-btn" class="icon-btn" title="Kopia zapasowa"></button>
+                    <button id="restore-btn" class="icon-btn" title="Wczytaj kopię"></button>
+                    <button id="lock-btn" class="icon-btn" title="Zablokuj sejf"></button>
+                </div>
+            </div>
+            <div class="controls-bar"><div class="search-sort-wrapper"><div class="search-wrapper"><input type="search" id="search-input" placeholder="Szukaj plików..."></div><div class="sort-wrapper"><select id="sort-select"><option value="date-desc">Data (Najnowsze)</option><option value="date-asc">Data (Najstarsze)</option><option value="name-asc">Nazwa (A-Z)</option><option value="name-desc">Nazwa (Z-A)</option></select></div></div><div class="filter-buttons" id="filter-buttons"></div></div>
+            <div id="files-grid"></div>
+            <div class="actions-container">
+                <button id="calendar-fab-btn" title="Kalendarz"></button>
+                <label for="upload-input" class="fab" title="Dodaj plik (można wybrać wiele)">+</label>
+                <input type="file" id="upload-input" multiple>
+            </div>
+        </div>
+        <div id="calendar-view" class="view">
+            <div id="calendar-wrapper">
+                <div class="calendar-main">
+                    <div id="calendar-header">
+                        <button id="back-to-vault-btn" class="btn">Wróć do sejfu</button>
+                        <div class="nav-buttons">
+                            <button id="prev-month-btn">&lt;</button>
+                            <button id="next-month-btn">&gt;</button>
+                        </div>
+                    </div>
+                    <h2 id="month-display"></h2>
+                    <div id="weekdays"><div>Po</div><div>Wt</div><div>Śr</div><div>Cz</div><div>Pt</div><div>So</div><div>N</div></div>
+                    <div id="calendar-grid"></div>
+                </div>
+                <div id="day-details">
+                    <h3 id="day-details-title"></h3>
+                    <div id="event-note-editor" class="form-group">
+                        <textarea id="event-note-textarea" placeholder="Dodaj notatkę lub wydarzenie..."></textarea>
+                        <button id="save-event-btn" class="btn" style="margin-top: 10px;">Zapisz</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- MODALS -->
+    <div id="info-modal" class="modal"><div class="modal-content"><button class="modal-close">&times;</button><h2>O Aplikacji FortiSafe</h2><p style="text-align: left; max-width: none;">Ta aplikacja to w pełni offline'owy, bezpieczny menedżer plików, który działa w 100% w Twojej przeglądarce. Żadne dane nigdy nie opuszczają Twojego urządzenia.</p><h3>Twoje Bezpieczeństwo - Najwyższy Priorytet</h3><ul><li><strong>Zero Wiedzy (Zero-Knowledge):</strong> Tylko Ty znasz swoje hasło główne. Aplikacja go nie przechowuje i nie jest w stanie go odzyskać.</li><li><strong>Szyfrowanie po Stronie Klienta:</strong> Wszystkie pliki i notatki są szyfrowane na Twoim urządzeniu przed zapisaniem przy użyciu najsilniejszych standardów (AES-GCM z Web Crypto API).</li><li><strong>Brak Serwera:</strong> Aplikacja nie komunikuje się z żadnym serwerem. Wszystkie dane są przechowywane lokalnie w bezpiecznej bazie danych przeglądarki (IndexedDB).</li></ul><h3>Kluczowe Funkcje</h3><ul><li><strong>Przechowywanie Plików:</strong> Bezpiecznie przechowuj dowolne pliki. </li><li><strong>Szyfrowany Kalendarz:</strong> Planuj wydarzenia i zapisuj notatki w bezpiecznym kalendarzu. Wszystkie wpisy są chronione Twoim hasłem głównym.</li><li><strong>Zarządzanie:</strong> Zmieniaj nazwy, dodawaj notatki i oznaczaj pliki jako ulubione.</li><li><strong>Organizacja:</strong> Błyskawicznie filtruj, sortuj i wyszukuj swoje pliki.</li><li><strong>Backup i Przywracanie:</strong> Twórz w pełni zaszyfrowane kopie zapasowe całego sejfu (w tym danych z kalendarza) i przywracaj je na dowolnym urządzeniu.</li><li><strong>Personalizacja:</strong> Przełączaj się między motywem jasnym i ciemnym.</li></ul></div></div>
+    <div id="custom-alert-modal" class="modal"><div class="modal-content"><h2 id="custom-alert-title"></h2><p id="custom-alert-message"></p><div id="custom-alert-input-wrapper" class="form-group"><input type="text" id="custom-alert-input"></div><div id="custom-alert-buttons"></div></div></div>
+    <div id="modal-view-file" class="modal"><div class="modal-content"><button class="modal-close">&times;</button>
+        <h2 id="modal-file-name"></h2>
+        <p id="modal-file-date" style="text-align: center; opacity: 0.7; font-size: 0.9em; margin-top: -15px; margin-bottom: 20px;"></p>
+        <div id="preview-container" style="text-align: center; margin: 20px 0;"></div>
+        <div id="note-section" style="margin-top:20px;"><h3>Notatki</h3><div id="note-display" style="cursor: pointer; min-height: 24px; padding: 10px; border: 1px dashed #555; border-radius: 8px;"></div><div id="note-editor" style="display:none;"><textarea id="note-textarea"></textarea><button id="save-note-btn" class="btn" style="margin-top:10px; width: auto; padding: 10px 20px;">Zapisz</button></div></div><button id="download-file-btn" class="btn" style="margin-top:20px;">Pobierz</button>
+    </div></div>
+
+    <div id="loader" class="loader"><div class="spinner"></div><div id="loader-text"></div></div>
+    <input type="file" id="restore-input" accept=".json" style="display:none;">
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const DB_NAME = 'SecureFileVault', DB_VERSION = 2, STORE_NAME = 'files', CONFIG_STORE_NAME = 'config', CALENDAR_STORE_NAME = 'calendar';
+            const VERIFICATION_STRING = 'VAULT_VERIFICATION_OK';
+            const app = {
+                db: null, masterKey: null, allFilesMeta: [], currentSearchTerm: '', currentFilter: 'all', currentSort: 'date-desc',
+                calendarNav: 0, calendarSelectedDay: null,
+                views: { setup: document.getElementById('setup-view'), login: document.getElementById('login-view'), vault: document.getElementById('vault-view'), calendar: document.getElementById('calendar-view') },
+                modals: { alert: document.getElementById('custom-alert-modal'), info: document.getElementById('info-modal'), viewFile: document.getElementById('modal-view-file') },
+                loader: document.getElementById('loader'), loaderText: document.getElementById('loader-text'),
+                icons: {
+                    all: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>`,
+                    photo: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`,
+                    video: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>`,
+                    audio: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>`,
+                    document: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`,
+                    other: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>`,
+                    favorite: `<svg viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z" /></svg>`,
+                    sun: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`,
+                    moon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`,
+                    calendar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`,
+                    backup: `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>`,
+                    restore: `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
+                    lock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`,
+                    rename: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`,
+                    delete: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`,
+                },
+
+                async init() { this.attachEventListeners(); this.setupIcons(); this.applyInitialTheme(); try { await this.initDB(); const config = await this.getConfig(); if (config && config.salt) this.showView('login'); else this.showView('setup'); } catch (error) { console.error("Initialization failed:", error); await this.showAlert({title: "Błąd Krytyczny", message: "Wystąpił błąd inicjalizacji bazy danych. Spróbuj odświeżyć stronę."}); } },
+                setupIcons() { document.querySelectorAll('.filter-btn').forEach(btn => btn.remove()); const filters = ['favorite', 'all', 'photo', 'video', 'document', 'audio', 'other']; filters.forEach(f => { const btn = document.createElement('button'); btn.className = 'filter-btn'; btn.dataset.filter = f; btn.innerHTML = this.icons[f]; if(f === 'all') btn.classList.add('active'); document.getElementById('filter-buttons').appendChild(btn); }); ['calendar-fab-btn', 'backup-btn', 'restore-btn', 'lock-btn'].forEach(id => document.getElementById(id).innerHTML = this.icons[id.replace('-btn', '').replace('-fab', '')]); },
+                showView(viewName) { Object.values(this.views).forEach(v => v.classList.remove('active')); if (this.views[viewName]) this.views[viewName].classList.add('active'); },
+                toggleLoader(show, text = '') { this.loader.classList.toggle('active', show); this.loaderText.textContent = text; },
+                initDB() { return new Promise((resolve, reject) => { const r = indexedDB.open(DB_NAME, DB_VERSION); r.onerror = () => reject(r.error); r.onsuccess = (e) => { this.db = e.target.result; resolve(); }; r.onupgradeneeded = (e) => { const db = e.target.result; if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME, { keyPath: 'id' }); if (!db.objectStoreNames.contains(CONFIG_STORE_NAME)) db.createObjectStore(CONFIG_STORE_NAME, { keyPath: 'key' }); if (!db.objectStoreNames.contains(CALENDAR_STORE_NAME)) db.createObjectStore(CALENDAR_STORE_NAME, { keyPath: 'date' }); }; }); },
+                getConfig() { return new Promise(res => this.db.transaction(CONFIG_STORE_NAME).objectStore(CONFIG_STORE_NAME).get('config').onsuccess=e=>res(e.target.result)); },
+                async deriveKey(password, salt) { const keyMaterial = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), { name: 'PBKDF2' }, false, ['deriveKey']); return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 250000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']); },
+                async encrypt(data, key = this.masterKey) { const iv = crypto.getRandomValues(new Uint8Array(12)); const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data); return { iv, ciphertext: new Uint8Array(ciphertext) }; },
+                async decrypt(data, key = this.masterKey) { try { return await crypto.subtle.decrypt({ name: 'AES-GCM', iv: data.iv }, key, data.ciphertext); } catch (e) { return null; } },
+
+                arrayBufferToBase64(buffer) {
+                    let binary = '';
+                    const bytes = new Uint8Array(buffer);
+                    const len = bytes.byteLength;
+                    const CHUNK_SIZE = 0x8000;
+                    for (let i = 0; i < len; i += CHUNK_SIZE) {
+                        const chunk = bytes.subarray(i, i + CHUNK_SIZE);
+                        binary += String.fromCharCode.apply(null, chunk);
+                    }
+                    return btoa(binary);
+                },
+                base64ToArrayBuffer(base64) { const str = atob(base64); const len = str.length; const bytes = new Uint8Array(len); for (let i = 0; i < len; i++) { bytes[i] = str.charCodeAt(i); } return bytes.buffer; },
+
+                async updateAndRenderFiles() { this.allFilesMeta = await new Promise(res => this.db.transaction(STORE_NAME).objectStore(STORE_NAME).getAll().onsuccess = e => res(e.target.result)); await this.renderFiles(); },
+                async renderFiles() {
+                    const grid = document.getElementById('files-grid'); grid.innerHTML = '';
+                    let filtered = this.allFilesMeta;
+                    if (this.currentFilter === 'favorite') filtered = filtered.filter(f => f.isFavorite);
+                    else if (this.currentFilter !== 'all') filtered = filtered.filter(f => f.category === this.currentFilter);
+                    if (this.currentSearchTerm) filtered = filtered.filter(f => f.name.toLowerCase().includes(this.currentSearchTerm.toLowerCase()));
+                    filtered.sort((a, b) => { switch (this.currentSort) { case 'name-asc': return a.name.localeCompare(b.name); case 'name-desc': return b.name.localeCompare(a.name); case 'date-asc': return a.dateAdded - b.dateAdded; default: return b.dateAdded - a.dateAdded; } });
+                    if (filtered.length === 0) { grid.innerHTML = `<p style="grid-column: 1 / -1; text-align:center; opacity: 0.6; margin-top: 40px;">Brak plików spełniających kryteria.</p>`; return; }
+                    for (const meta of filtered) {
+                        const wrapper = document.createElement('div'); wrapper.className = 'file-item-wrapper';
+                        const card = document.createElement('div'); card.className = 'file-card'; card.dataset.id = meta.id;
+                        let cardContent = `<div class="file-icon">${this.icons[meta.category] || this.icons.other}</div>`;
+                        if (meta.encryptedThumbnail) { const decryptedThumb = await this.decrypt(meta.encryptedThumbnail); if (decryptedThumb) { const url = URL.createObjectURL(new Blob([decryptedThumb], {type: 'image/jpeg'})); cardContent = `<img src="${url}" class="thumbnail" onload="URL.revokeObjectURL(this.src)">`; } }
+                        card.innerHTML = `${cardContent}<div class="card-actions"><button class="card-action-btn favorite-btn ${meta.isFavorite ? 'is-favorite' : ''}" data-action="favorite" title="Ulubione">${this.icons.favorite}</button><button class="card-action-btn" data-action="rename" title="Zmień nazwę">${this.icons.rename}</button><button class="card-action-btn" data-action="delete" title="Usuń">${this.icons.delete}</button></div>`;
+                        const nameP = document.createElement('p'); nameP.className = 'file-name-p'; nameP.textContent = meta.name; nameP.title = meta.name;
+                        wrapper.appendChild(card); wrapper.appendChild(nameP); grid.appendChild(wrapper);
+                    }
+                },
+
+                async loadCalendar() {
+                    const dt = new Date();
+                    if (this.calendarNav !== 0) dt.setMonth(new Date().getMonth() + this.calendarNav);
+                    const month = dt.getMonth(), year = dt.getFullYear();
+                    document.getElementById('month-display').innerText = `${dt.toLocaleDateString('pl-PL', { month: 'long' })} ${year}`;
+                    const events = await new Promise(res => this.db.transaction(CALENDAR_STORE_NAME).objectStore(CALENDAR_STORE_NAME).getAll(IDBKeyRange.bound(`${year}-${String(month + 1).padStart(2, '0')}-01`, `${year}-${String(month + 1).padStart(2, '0')}-31`)).onsuccess = e => res(e.target.result));
+                    const calendarGrid = document.getElementById('calendar-grid'); calendarGrid.innerHTML = '';
+                    const firstDayOfMonth = new Date(year, month, 1);
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    const dayOfWeek = firstDayOfMonth.getDay();
+                    const paddingDays = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                    for(let i = 1; i <= paddingDays + daysInMonth; i++) {
+                        const daySquare = document.createElement('div'); daySquare.classList.add('calendar-day');
+                        if (i > paddingDays) {
+                            const day = i - paddingDays;
+                            const dayString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                            daySquare.textContent = day;
+                            if (day === new Date().getDate() && this.calendarNav === 0) daySquare.classList.add('today');
+                            if (events.some(e => e.date === dayString && e.encryptedNote)) daySquare.classList.add('has-event');
+                            daySquare.addEventListener('click', () => this.openDayDetails(dayString));
+                        } else { daySquare.classList.add('padding-day'); }
+                        calendarGrid.appendChild(daySquare);
+                    }
+                    const todayString = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
+                    this.openDayDetails(this.calendarSelectedDay || todayString);
+                },
+                async openDayDetails(dayString) {
+                    this.calendarSelectedDay = dayString;
+                    const [year, month, day] = dayString.split('-').map(Number);
+                    document.getElementById('day-details-title').innerText = `Notatki na ${new Date(year, month-1, day).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+                    document.querySelectorAll('.calendar-day.selected').forEach(d => d.classList.remove('selected'));
+                    const target = Array.from(document.querySelectorAll('.calendar-day:not(.padding-day)')).find(d => parseInt(d.textContent) === day);
+                    if(target) target.classList.add('selected');
+                    const eventData = await new Promise(res => this.db.transaction(CALENDAR_STORE_NAME).objectStore(CALENDAR_STORE_NAME).get(dayString).onsuccess = e => res(e.target.result));
+                    const textarea = document.getElementById('event-note-textarea');
+                    if (eventData && eventData.encryptedNote) { const decrypted = await this.decrypt(eventData.encryptedNote); textarea.value = decrypted ? new TextDecoder().decode(decrypted) : '';
+                    } else { textarea.value = ''; }
+                },
+                async saveCurrentCalendarEvent() {
+                    this.toggleLoader(true, 'Zapisywanie...');
+                    const text = document.getElementById('event-note-textarea').value;
+                    const eventData = { date: this.calendarSelectedDay, encryptedNote: text.trim() ? await this.encrypt(new TextEncoder().encode(text)) : null };
+                    await new Promise(res => this.db.transaction(CALENDAR_STORE_NAME, 'readwrite').objectStore(CALENDAR_STORE_NAME).put(eventData).onsuccess = res);
+                    this.toggleLoader(false);
+                    this.showView('vault');
+                },
+                 async handleFileUpload(files) { this.toggleLoader(true, 'Szyfrowanie plików...'); for (const file of files) { try { const fileBuffer = await file.arrayBuffer(); let thumbnailBuffer = file.type.startsWith('image/') ? await this.createThumbnail(file) : null; const encryptedContent = await this.encrypt(fileBuffer); const encryptedThumbnail = thumbnailBuffer ? await this.encrypt(thumbnailBuffer) : null; await new Promise(res => this.db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put({ id: crypto.randomUUID(), name: file.name, type: file.type, category: this.getCategoryFromType(file.type), dateAdded: Date.now(), isFavorite: false, encryptedNote: null, encryptedContent, encryptedThumbnail }).onsuccess=res); } catch (err) { await this.showAlert({title: 'Błąd', message: `Nie udało się przetworzyć pliku: ${file.name}`}); } } await this.updateAndRenderFiles(); this.toggleLoader(false); },
+                createThumbnail(file, maxWidth = 150, maxHeight = 150) { return new Promise((res, rej) => { const img = new Image(); const reader = new FileReader(); reader.onload = e => { img.src = e.target.result; img.onload = () => { const canvas = document.createElement('canvas'); let {width, height} = img; if (width > height) { if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; } } else { if (height > maxHeight) { width *= maxHeight / height; height = maxHeight; } } canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(img, 0, 0, width, height); canvas.toBlob(blob => { blob.arrayBuffer().then(res).catch(rej); }, 'image/jpeg', 0.7); }; img.onerror = rej; }; reader.onerror = rej; reader.readAsDataURL(file); }); },
+                getCategoryFromType(type) { if (type.startsWith('image/')) return 'photo'; if (type.startsWith('video/')) return 'video'; if (type.startsWith('audio/')) return 'audio'; if (['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'].includes(type)) return 'document'; return 'other'; },
+                _showCustomAlert(options) { return new Promise((resolve) => { const { title, message, type = 'alert', confirmText = 'OK', cancelText = 'Anuluj', inputValue = '', danger = false } = options; const modal = this.modals.alert; modal.querySelector('#custom-alert-title').textContent = title; modal.querySelector('#custom-alert-message').textContent = message; const inputWrapper = modal.querySelector('#custom-alert-input-wrapper'); const input = modal.querySelector('#custom-alert-input'); input.type = options.type === 'password' ? 'password' : 'text'; const buttonsContainer = modal.querySelector('#custom-alert-buttons'); buttonsContainer.innerHTML = ''; if (type === 'prompt' || type === 'password') { inputWrapper.style.display = 'block'; input.value = inputValue; } else { inputWrapper.style.display = 'none'; } const confirmBtn = document.createElement('button'); confirmBtn.textContent = confirmText; confirmBtn.className = danger ? 'btn btn-danger' : 'btn'; const close = (value) => { modal.classList.remove('active'); resolve(value); }; confirmBtn.onclick = () => close(type === 'prompt' || type === 'password' ? input.value : true); if (type === 'confirm' || type === 'prompt' || type === 'password') { const cancelBtn = document.createElement('button'); cancelBtn.textContent = cancelText; cancelBtn.className = 'btn btn-secondary'; cancelBtn.onclick = () => close(type === 'prompt' || type === 'password' ? null : false); buttonsContainer.appendChild(cancelBtn); } buttonsContainer.appendChild(confirmBtn); modal.classList.add('active'); if (type === 'prompt' || type === 'password') input.focus(); }); },
+                showAlert(options) { return this._showCustomAlert({ ...options, type: 'alert' }); },
+                showConfirm(options) { return this._showCustomAlert({ ...options, type: 'confirm', confirmText: options.confirmText || 'Potwierdź' }); },
+                showPrompt(options) { return this._showCustomAlert({ ...options, type: 'prompt', confirmText: options.confirmText || 'Zapisz' }); },
+                async resetApp() { if(await this.showConfirm({title: 'OSTATECZNE OSTRZEŻENIE', message: 'Spowoduje to trwałe usunięcie WSZYSTKICH DANYCH. Tej operacji nie można cofnąć. Kontynuować?', danger: true, confirmText: 'Usuń wszystko'})) { this.toggleLoader(true, "Usuwanie danych..."); if (this.db) { this.db.close(); this.db = null; } const req = indexedDB.deleteDatabase(DB_NAME); req.onsuccess = () => { localStorage.removeItem('theme'); location.reload(); }; req.onerror = async () => { this.toggleLoader(false); await this.showAlert({title: "Błąd", message: "Nie udało się usunąć bazy danych."}); }; } },
+
+                attachEventListeners() {
+                    document.getElementById('setup-form').addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        const p1In = document.getElementById('setup-password'), p2In = document.getElementById('setup-password-confirm');
+                        const errEl = document.getElementById('setup-error'), p1 = p1In.value, p2 = p2In.value;
+                        errEl.textContent = ''; [p1In, p2In].forEach(el => el.classList.remove('input-error'));
+                        if (p1.length < 8) { errEl.textContent = 'Hasło musi mieć co najmniej 8 znaków.'; p1In.classList.add('input-error'); return; }
+                        if (p1 !== p2) { errEl.textContent = 'Hasła nie są takie same.'; p2In.classList.add('input-error'); return; }
+                        this.toggleLoader(true, 'Tworzenie klucza...');
+                        const salt = crypto.getRandomValues(new Uint8Array(16)); this.masterKey = await this.deriveKey(p1, salt);
+                        const encVer = await this.encrypt(new TextEncoder().encode(VERIFICATION_STRING));
+                        await new Promise(res => this.db.transaction(CONFIG_STORE_NAME, 'readwrite').objectStore(CONFIG_STORE_NAME).put({ key: 'config', salt, encryptedVerification: encVer }).onsuccess = res);
+                        this.toggleLoader(false); await this.updateAndRenderFiles(); this.showView('vault');
+                    });
+                    document.getElementById('login-form').addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        const passInput = document.getElementById('login-password'), errEl = document.getElementById('login-error'), p = passInput.value;
+                        errEl.textContent = ''; passInput.classList.remove('input-error');
+                        if (!p) { errEl.textContent = 'Proszę wpisać hasło.'; passInput.classList.add('input-error'); return; }
+                        this.toggleLoader(true, 'Weryfikacja...');
+                        const config = await this.getConfig();
+                        this.masterKey = await this.deriveKey(p, config.salt);
+                        const decVerRaw = await this.decrypt(config.encryptedVerification);
+                        if (decVerRaw && new TextDecoder().decode(decVerRaw) === VERIFICATION_STRING) {
+                            this.toggleLoader(true, 'Odblokowywanie...'); await this.updateAndRenderFiles();
+                            this.toggleLoader(false); this.showView('vault');
+                        } else {
+                            this.toggleLoader(false); this.masterKey = null; errEl.textContent = 'Nieprawidłowe hasło.'; passInput.classList.add('input-error');
+                        }
+                        passInput.value = '';
+                    });
+                    document.getElementById('forgot-password-link').addEventListener('click', async () => { if(await this.showConfirm({title:'Zapomniane hasło?', message:'Nie ma możliwości odzyskania hasła. Jedyną opcją jest usunięcie wszystkich danych i rozpoczęcie od nowa. Czy na pewno chcesz usunąć sejf?'})) await this.resetApp(); });
+                    document.getElementById('info-link').addEventListener('click', () => this.modals.info.classList.add('active'));
+                    document.getElementById('setup-info-link').addEventListener('click', () => this.modals.info.classList.add('active'));
+                    document.querySelectorAll('.modal .modal-close').forEach(btn => btn.addEventListener('click', () => btn.closest('.modal').classList.remove('active')));
+                    document.getElementById('upload-input').addEventListener('change', (e) => { if (e.target.files.length > 0) this.handleFileUpload(e.target.files); e.target.value = ''; });
+                    document.getElementById('sort-select').addEventListener('change', e => { this.currentSort = e.target.value; this.renderFiles(); });
+                    document.getElementById('search-input').addEventListener('input', e => { this.currentSearchTerm = e.target.value; this.renderFiles(); });
+                    document.getElementById('filter-buttons').addEventListener('click', e => { const btn = e.target.closest('.filter-btn'); if(btn) { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); this.currentFilter = btn.dataset.filter; this.renderFiles(); } });
+                    document.getElementById('lock-btn').addEventListener('click', () => { this.masterKey = null; this.showView('login'); });
+                    document.getElementById('theme-toggle-btn').addEventListener('click', () => { document.body.classList.toggle('light-theme'); localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark'); this.applyInitialTheme(); });
+                    document.getElementById('backup-btn').addEventListener('click', () => this.backupData());
+                    document.getElementById('restore-btn').addEventListener('click', () => document.getElementById('restore-input').click());
+                    document.getElementById('restore-input').addEventListener('change', (e) => this.restoreData(e));
+                    document.getElementById('calendar-fab-btn').addEventListener('click', () => { this.calendarNav = 0; this.calendarSelectedDay = null; this.showView('calendar'); this.loadCalendar(); });
+                    document.getElementById('back-to-vault-btn').addEventListener('click', () => this.showView('vault'));
+                    document.getElementById('prev-month-btn').addEventListener('click', () => { this.calendarNav--; this.loadCalendar(); });
+                    document.getElementById('next-month-btn').addEventListener('click', () => { this.calendarNav++; this.loadCalendar(); });
+                    document.getElementById('save-event-btn').addEventListener('click', () => this.saveCurrentCalendarEvent());
+                    document.getElementById('files-grid').addEventListener('click', (e) => { const card = e.target.closest('.file-card'); if (!card) return; const id = card.dataset.id; const action = e.target.closest('[data-action]')?.dataset.action; if (action) { e.stopPropagation(); if (action === 'delete') this.deleteFile(id); else if (action === 'rename') this.renameFile(id); else if (action === 'favorite') this.toggleFavorite(id); } else { this.viewFile(id); } });
+                },
+                applyInitialTheme() { const theme = localStorage.getItem('theme') || 'dark'; document.body.classList.toggle('light-theme', theme === 'light'); document.getElementById('theme-toggle-btn').innerHTML = theme === 'light' ? this.icons.moon : this.icons.sun; },
+
+                // ZMIANA: Poprawiona logika zabezpieczenia
+                async backupData() {
+                    const [files, calendar] = await Promise.all([
+                        new Promise(res => this.db.transaction(STORE_NAME).objectStore(STORE_NAME).getAll().onsuccess = e => res(e.target.result)),
+                        new Promise(res => this.db.transaction(CALENDAR_STORE_NAME).objectStore(CALENDAR_STORE_NAME).getAll().onsuccess = e => res(e.target.result))
+                    ]);
+
+                    if (files.length === 0 && calendar.length === 0) {
+                        await this.showAlert({ title: 'Informacja', message: 'Sejf jest pusty. Nie można utworzyć kopii zapasowej.' });
+                        return;
+                    }
+
+                    const confirmed = await this.showConfirm({
+                        title: 'Utwórz Kopię Zapasową',
+                        message: 'Kopia zapasowa zostanie zaszyfrowana Twoim aktualnym hasłem głównym. To hasło będzie wymagane do jej przywrócenia. Kontynuować?'
+                    });
+                    if (!confirmed) return;
+
+                    this.toggleLoader(true, "Tworzenie kopii zapasowej...");
+                    try {
+                        const config = await this.getConfig();
+                        const serializeCrypto = (data) => data ? { iv: this.arrayBufferToBase64(data.iv), ciphertext: this.arrayBufferToBase64(data.ciphertext) } : null;
+
+                        const serializableFiles = files.map(f => ({
+                            id: f.id, name: f.name, type: f.type, category: f.category, dateAdded: f.dateAdded, isFavorite: f.isFavorite,
+                            encryptedNote: serializeCrypto(f.encryptedNote),
+                            encryptedContent: serializeCrypto(f.encryptedContent),
+                            encryptedThumbnail: serializeCrypto(f.encryptedThumbnail)
+                        }));
+                        const serializableCalendar = calendar.map(c => ({
+                            date: c.date,
+                            encryptedNote: serializeCrypto(c.encryptedNote)
+                        }));
+
+                        const backupContent = { files: serializableFiles, calendar: serializableCalendar, verification: VERIFICATION_STRING };
+                        const dataToEncrypt = new TextEncoder().encode(JSON.stringify(backupContent));
+
+                        const { iv, ciphertext } = await this.encrypt(dataToEncrypt, this.masterKey);
+
+                        const finalBackupObject = {
+                            salt: this.arrayBufferToBase64(config.salt),
+                            encryptedData: {
+                                iv: this.arrayBufferToBase64(iv),
+                                ciphertext: this.arrayBufferToBase64(ciphertext)
+                            }
+                        };
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(new Blob([JSON.stringify(finalBackupObject)], {type: 'application/json'}));
+                        a.download = `fortisafe-backup-${new Date().toISOString().slice(0,10)}.json`;
+                        a.click();
+                        URL.revokeObjectURL(a.href);
+                    } catch (err) {
+                        console.error("Backup failed:", err);
+                        await this.showAlert({title: 'Błąd', message: 'Nie udało się utworzyć kopii zapasowej: ' + err.message });
+                    } finally {
+                        this.toggleLoader(false);
+                    }
+                },
+                async restoreData(e) {
+                    const file = e.target.files[0]; if (!file) return;
+                    try {
+                        const backup = JSON.parse(await file.text());
+                        if (!backup.salt || !backup.encryptedData || !(await this.showConfirm({title: 'Przywracanie Danych', message:'Ta operacja NADPISZE wszystkie obecne dane. Kontynuować?', danger: true}))) { e.target.value = ''; return; }
+
+                        const password = await this._showCustomAlert({title: 'Hasło do kopii zapasowej', message: 'Podaj hasło główne sejfu, z którego pochodzi ta kopia zapasowa.', type: 'password'});
+                        if (!password) { e.target.value = ''; return; }
+
+                        this.toggleLoader(true, "Odszyfrowywanie kopii...");
+                        const salt = this.base64ToArrayBuffer(backup.salt);
+                        const restoreKey = await this.deriveKey(password, salt);
+
+                        const encryptedData = {
+                            iv: new Uint8Array(this.base64ToArrayBuffer(backup.encryptedData.iv)),
+                            ciphertext: new Uint8Array(this.base64ToArrayBuffer(backup.encryptedData.ciphertext))
+                        };
+                        const decryptedRaw = await this.decrypt(encryptedData, restoreKey);
+
+                        if (!decryptedRaw) throw new Error('Odszyfrowanie nie powiodło się. Prawdopodobnie podałeś złe hasło.');
+
+                        const restoredData = JSON.parse(new TextDecoder().decode(decryptedRaw));
+                        if (restoredData.verification !== VERIFICATION_STRING) throw new Error('Weryfikacja kopii zapasowej nie powiodła się. Plik uszkodzony lub złe hasło.');
+
+                        this.toggleLoader(true, "Przywracanie danych...");
+                        if(this.db) { this.db.close(); this.db = null; }
+                        await new Promise((res, rej) => {const delReq = indexedDB.deleteDatabase(DB_NAME); delReq.onsuccess = res; delReq.onerror = rej; });
+                        await this.initDB();
+
+                        const newMasterKey = await this.deriveKey(password, salt);
+                        const newEncryptedVerification = await this.encrypt(new TextEncoder().encode(VERIFICATION_STRING), newMasterKey);
+
+                        const tx = this.db.transaction([CONFIG_STORE_NAME, STORE_NAME, CALENDAR_STORE_NAME], 'readwrite');
+                        tx.objectStore(CONFIG_STORE_NAME).put({key: 'config', salt, encryptedVerification: newEncryptedVerification });
+
+                        const deserializeCrypto = (data) => data ? { iv: new Uint8Array(this.base64ToArrayBuffer(data.iv)), ciphertext: new Uint8Array(this.base64ToArrayBuffer(data.ciphertext)) } : null;
+
+                        restoredData.files.forEach(f => {
+                            const cleanFile = {
+                                id: f.id, name: f.name, type: f.type, category: f.category, dateAdded: f.dateAdded, isFavorite: f.isFavorite,
+                                encryptedNote: deserializeCrypto(f.encryptedNote),
+                                encryptedContent: deserializeCrypto(f.encryptedContent),
+                                encryptedThumbnail: deserializeCrypto(f.encryptedThumbnail)
+                            };
+                            tx.objectStore(STORE_NAME).put(cleanFile);
+                        });
+                        (restoredData.calendar || []).forEach(c => tx.objectStore(CALENDAR_STORE_NAME).put({ date: c.date, encryptedNote: deserializeCrypto(c.encryptedNote) }));
+
+                        await new Promise((r,j) => {tx.oncomplete = r; tx.onerror = () => j(tx.error);});
+                        this.toggleLoader(false);
+                        await this.showAlert({title: 'Sukces', message: 'Dane wczytane. Aplikacja zostanie przeładowana.'});
+                        location.reload();
+                    } catch(err) { this.toggleLoader(false); await this.showAlert({title: 'Błąd Przywracania', message: err.message}); console.error(err); } finally { e.target.value = ''; }
+                },
+
+                async deleteFile(id) { if (await this.showConfirm({title: 'Potwierdzenie', message: 'Czy na pewno chcesz trwale usunąć ten plik?', danger: true, confirmText: 'Usuń'})) { await new Promise(res => this.db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).delete(id).onsuccess = res); await this.updateAndRenderFiles(); } },
+                async renameFile(id) { const fileMeta = this.allFilesMeta.find(f => f.id === id); const newName = await this.showPrompt({title: "Zmiana nazwy", message: `Wprowadź nową nazwę dla pliku:`, inputValue: fileMeta.name}); if (newName && newName.trim() !== "" && newName !== fileMeta.name) { const fullFile = await new Promise(res => this.db.transaction(STORE_NAME).objectStore(STORE_NAME).get(id).onsuccess = e => res(e.target.result)); fullFile.name = newName.trim(); await new Promise(res => this.db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put(fullFile).onsuccess = res); await this.updateAndRenderFiles(); } },
+                async toggleFavorite(id) { const fullFile = await new Promise(res => this.db.transaction(STORE_NAME).objectStore(STORE_NAME).get(id).onsuccess = e => res(e.target.result)); fullFile.isFavorite = !fullFile.isFavorite; await new Promise(res => this.db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put(fullFile).onsuccess = res); await this.updateAndRenderFiles(); },
+
+                async viewFile(id) {
+                    this.toggleLoader(true, "Odszyfrowywanie pliku...");
+                    try {
+                        const fileData = await new Promise(res => this.db.transaction(STORE_NAME).objectStore(STORE_NAME).get(id).onsuccess = e => res(e.target.result));
+                        if (!fileData) throw new Error("Nie znaleziono pliku.");
+
+                        const decryptedContent = await this.decrypt(fileData.encryptedContent);
+                        if (!decryptedContent) throw new Error("Odszyfrowanie nie powiodło się. Sprawdź konsolę błędów.");
+
+                        const modal = this.modals.viewFile;
+                        modal.querySelector('#modal-file-name').textContent = fileData.name;
+
+                        const dateAdded = new Date(fileData.dateAdded).toLocaleString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        modal.querySelector('#modal-file-date').textContent = `Dodano: ${dateAdded}`;
+
+                        const previewContainer = modal.querySelector('#preview-container');
+                        previewContainer.innerHTML = '';
+
+                        const blob = new Blob([decryptedContent], { type: fileData.type });
+                        const url = URL.createObjectURL(blob);
+                        let previewElement;
+
+                        if (fileData.type.startsWith('image/')) {
+                            previewElement = document.createElement('img');
+                            previewElement.style.cssText = 'max-width: 100%; max-height: 50vh; object-fit: contain;';
+                        } else if (fileData.type.startsWith('video/')) {
+                            previewElement = document.createElement('video');
+                            previewElement.controls = true;
+                            previewElement.style.cssText = 'max-width: 100%;';
+                        } else if (fileData.type.startsWith('audio/')) {
+                            previewElement = document.createElement('audio');
+                            previewElement.controls = true;
+                        } else if (fileData.type === 'application/pdf') {
+                            previewElement = document.createElement('embed');
+                            previewElement.type = 'application/pdf';
+                            previewElement.style.cssText = 'width: 100%; height: 60vh;';
+                        } else {
+                            previewElement = document.createElement('p');
+                            previewElement.textContent = "Podgląd niedostępny dla tego typu pliku.";
+                        }
+                        if (previewElement.tagName !== 'P') previewElement.src = url;
+                        previewContainer.appendChild(previewElement);
+
+                        const closeModalHandler = () => URL.revokeObjectURL(url);
+                        modal.querySelector('.modal-close').addEventListener('click', closeModalHandler, { once: true });
+
+                        const noteDisplay = modal.querySelector('#note-display'), noteEditor = modal.querySelector('#note-editor');
+                        const noteTextarea = modal.querySelector('#note-textarea'), saveNoteBtn = modal.querySelector('#save-note-btn');
+
+                        let currentNote = '';
+                        if (fileData.encryptedNote) {
+                            const decryptedNote = await this.decrypt(fileData.encryptedNote);
+                            if (decryptedNote) currentNote = new TextDecoder().decode(decryptedNote);
+                        }
+                        noteDisplay.textContent = currentNote || 'Brak notatek. Kliknij, aby dodać.';
+                        noteTextarea.value = currentNote;
+                        noteEditor.style.display = 'none'; noteDisplay.style.display = 'block';
+
+                        noteDisplay.onclick = () => { noteDisplay.style.display = 'none'; noteEditor.style.display = 'block'; noteTextarea.focus(); };
+
+                        const newSaveBtn = saveNoteBtn.cloneNode(true);
+                        saveNoteBtn.parentNode.replaceChild(newSaveBtn, saveNoteBtn);
+                        newSaveBtn.onclick = async () => {
+                            this.toggleLoader(true, 'Zapisywanie notatki...');
+                            const newNoteText = noteTextarea.value.trim();
+                            fileData.encryptedNote = newNoteText ? await this.encrypt(new TextEncoder().encode(newNoteText)) : null;
+                            await new Promise(res => this.db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put(fileData).onsuccess = res);
+                            noteDisplay.textContent = newNoteText || 'Brak notatek. Kliknij, aby dodać.';
+                            noteEditor.style.display = 'none'; noteDisplay.style.display = 'block';
+                            this.toggleLoader(false);
+                        };
+
+                        const downloadBtn = modal.querySelector('#download-file-btn');
+                        const newDownloadBtn = downloadBtn.cloneNode(true);
+                        downloadBtn.parentNode.replaceChild(newDownloadBtn, downloadBtn);
+                        newDownloadBtn.onclick = () => { const a = document.createElement('a'); a.href = url; a.download = fileData.name; document.body.appendChild(a); a.click(); document.body.removeChild(a); };
+
+                        this.toggleLoader(false);
+                        modal.classList.add('active');
+                    } catch (error) { this.toggleLoader(false); console.error("Error viewing file:", error); await this.showAlert({ title: "Błąd", message: "Nie można wyświetlić pliku. " + error.message }); }
+                }
+            };
+            app.init();
+        });
+    </script>
+</body>
+</html>
